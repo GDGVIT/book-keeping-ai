@@ -15,7 +15,8 @@
 
 
 ## Features
-- [x]  curl -X POST http://127.0.0.1:5000/extract -H "Content-Type: application/json" -d "{\"text\": \"John Doe bought 2 apples for $5\"}"
+- [x]  curl -X POST http://127.0.0.1:5000/extract -H "Content-Type: application/json" -d "{\"text\": \"John Doe bought 2 apples for $5\"}"
+
 {"CustomerName":"John Doe","ItemName":"apples","ItemQuantity":"2","Price":"5"}
 
 
