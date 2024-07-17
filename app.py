@@ -69,6 +69,27 @@ def extract_entities():
         "ItemName": ItemName,
         "ItemQuantity": ItemQuantity
     })
+def convert_to_dml(input_text):
+    parsed_data = re.match(r'(.*)\s+less than\s+(\d+)\s+rs', input_text, re.IGNORECASE)
+    if parsed_data:
+        item = parsed_data.group(1).strip()
+        price = int(parsed_data.group(2))
+        return f"SELECT {item} FROM Products WHERE Price < {price};"
+    else:
+        return "Invalid input format. Please provide something like 'apples less than 50 rs'."
+
+
+@app.route('/convert_to_dml', methods=['POST'])
+def convert_to_dml_endpoint():
+    data = request.json
+    input_text = data.get('text', '')
+
+    dml_code = convert_to_dml(input_text)
+
+    return jsonify({
+        "input_text": input_text,
+        "dml_code": dml_code
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
