@@ -19,6 +19,9 @@
 
 {"CustomerName":"John Doe","ItemName":"apples","ItemQuantity":"2","Price":"5"}
 
+- [x] curl -X POST "http://127.0.0.1:5000/extract_entities" -H "Content-Type: application/json" -d "{\"text\":\"apples less than 50 rs\"}"
+{"action":"less","object":"apples","range":"50"}
+
 
 <br>
 
