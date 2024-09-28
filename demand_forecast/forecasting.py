@@ -4,87 +4,82 @@ from bokeh.plotting import figure, show, output_file
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource
 from sklearn.metrics import mean_squared_error, r2_score
-from statsmodels.tsa.arima.model import ARIMA
+from sklearn.linear_model import LinearRegression
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.stattools import adfuller
 import warnings
 
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
-# Load data
-def load_data(data_path):
-    df = pd.read_csv(data_path)
-    df['transaction_date'] = pd.to_datetime(df['transaction_date'])
-    return df
-
-# Function to check for stationarity
+# Check for stationarity
 def is_stationary(series):
-    series = series.dropna()
-    if series.nunique() <= 1:  # Check if series is constant
-        print("Series is constant.")
-        return False
     result = adfuller(series)
-    return result[1] < 0.05  # p-value less than 0.05 indicates stationarity
+    p_value = result[1]
+    return p_value < 0.05
 
-# Function to predict future demand using ARIMA or Exponential Smoothing model
+# Predict future demand using Linear Regression, Exponential Smoothing, or ARIMA
 def predict_demand(df, item_id, forecast_months=6):
     item_data = df[df['item_id'] == item_id].copy()
     item_data = item_data.sort_values('transaction_date')
 
-    # Prepare the data for modeling
+    # Prepare data for modeling
     item_data['year_month'] = item_data['transaction_date'].dt.to_period('M')
     monthly_demand = item_data.groupby('year_month')['quantity'].sum().reset_index()
-
-    # Set the year_month as the index
     monthly_demand.set_index('year_month', inplace=True)
-    num_observations = len(monthly_demand)
 
-    if num_observations < 2:
+    # Check if we have enough data
+    if len(monthly_demand) < 2:
         print(f"Not enough data available for item ID {item_id}.")
         return None, None
 
     # Handle missing values
-    monthly_demand['quantity'].replace([np.inf, -np.inf], np.nan, inplace=True)
-    monthly_demand.dropna(inplace=True)
+    monthly_demand = monthly_demand.asfreq('M', fill_value=0)
 
-    # Attempt to fit the ARIMA model
+    # Check for stationarity and differencing if necessary
+    if not is_stationary(monthly_demand['quantity']):
+        print("The time series is non-stationary. Differencing the series.")
+        monthly_demand['quantity'] = monthly_demand['quantity'].diff().dropna()
+
+    # Attempt to fit the Linear Regression model
     try:
-        model = ARIMA(monthly_demand['quantity'], order=(1, 1, 1))  # Adjust order as needed
-        model_fit = model.fit()
+        monthly_demand['time_index'] = np.arange(len(monthly_demand))
+        X = monthly_demand['time_index'].values.reshape(-1, 1)
+        y = monthly_demand['quantity'].values
 
-        # Generate future dates
-        last_period = monthly_demand.index[-1].to_timestamp()
-        future_dates = [last_period + pd.DateOffset(months=i) for i in range(1, forecast_months + 1)]
+        model = LinearRegression()
+        model.fit(X, y)
 
-        # Generate predictions
-        forecast = model_fit.forecast(steps=forecast_months)
+        # Generate future dates for prediction
+        future_index = np.arange(len(monthly_demand), len(monthly_demand) + forecast_months).reshape(-1, 1)
+        forecast = model.predict(future_index)
 
         # Evaluate model performance
-        y_train = monthly_demand['quantity'].values
-        y_pred_train = model_fit.fittedvalues.values
-
-        mse = mean_squared_error(y_train, y_pred_train)
-        r2 = r2_score(y_train, y_pred_train)
-
-        print(f"Model Mean Squared Error: {mse:.2f}")
-        print(f"Model R-squared: {r2:.2f}")
+        mse = mean_squared_error(y, model.predict(X))
+        r2 = r2_score(y, model.predict(X))
+        print(f"Linear Regression - MSE: {mse:.2f}, R-squared: {r2:.2f}")
 
     except Exception as e:
-        print(f"ARIMA fitting failed: {e}. Using Exponential Smoothing as a fallback.")
-
-        # Adjusted to allow Exponential Smoothing for more cases
-        if num_observations >= 5:
+        print(f"Linear Regression fitting failed: {e}. Trying Exponential Smoothing as fallback.")
+        try:
             model = ExponentialSmoothing(monthly_demand['quantity'], seasonal='add', seasonal_periods=12)
             model_fit = model.fit()
-
             forecast = model_fit.forecast(steps=forecast_months)
-            future_dates = [monthly_demand.index[-1].to_timestamp() + pd.DateOffset(months=i) for i in
-                            range(1, forecast_months + 1)]
-        else:
-            print(f"Not enough data for Exponential Smoothing. Item ID {item_id} needs at least 5 months of data.")
-            return None, None
+            print("Exponential Smoothing model fitted successfully.")
+        except Exception as e:
+            print(f"Exponential Smoothing fitting failed: {e}. Trying ARIMA as fallback.")
+            try:
+                model = ARIMA(monthly_demand['quantity'], order=(1, 1, 1))
+                model_fit = model.fit()
+                forecast = model_fit.forecast(steps=forecast_months)
+                print("ARIMA model fitted successfully.")
+            except Exception as e:
+                print(f"ARIMA fitting failed: {e}.")
+                return None, None
 
+    # Generate future dates for the forecast
+    future_dates = [monthly_demand.index[-1].to_timestamp() + pd.DateOffset(months=i) for i in range(1, forecast_months + 1)]
     print("Predicted Demand for future months:")
     for date, demand in zip(future_dates, forecast):
         print(f"{date.strftime('%Y-%m')}: {demand:.2f}")
@@ -133,29 +128,3 @@ def create_bokeh_plots(df, item_id, future_months, predicted_demand):
 
     output_file("demand_forecasting.html")
     show(column(actual_plot, predicted_plot))
-
-# Main function to run the analysis
-def main():
-    data_path = 'data/orders2.csv'  # Change to your CSV path
-    df = load_data(data_path)
-
-    item_id = int(input("Enter item ID for demand forecast: "))
-
-    # Automatically determine the number of months for forecasting based on available data
-    latest_date = df['transaction_date'].max()
-    num_forecast_months = 12  # or any other number if you want more future predictions
-
-    future_months, predicted_demand = predict_demand(df, item_id, forecast_months=num_forecast_months)
-
-    if predicted_demand is not None:
-        alerts = check_stock_and_alert(df, item_id, predicted_demand, future_months)
-        for alert in alerts:
-            print(alert)
-
-        create_bokeh_plots(df, item_id, future_months, predicted_demand)
-    else:
-        print(f"Could not generate forecasts for item ID {item_id}.")
-
-
-if __name__ == "__main__":
-    main()

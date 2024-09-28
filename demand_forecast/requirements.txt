@@ -1,0 +1,5 @@
+pandas
+numpy
+bokeh
+statsmodels
+scikit-learn
