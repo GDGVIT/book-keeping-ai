@@ -1,8 +1,9 @@
-from forecasting import predict_demand, check_stock_and_alert, create_bokeh_plots
+from forecasting import predict_demand, check_stock_and_alert
+from bokeh_forecast import create_bokeh_plots
 from utils import load_data
 
 def main():
-    data_path = 'data/orders2.csv'
+    data_path = 'data/orders4.csv'
     df = load_data(data_path)
 
     item_id = int(input("Enter item ID for demand forecast: "))
