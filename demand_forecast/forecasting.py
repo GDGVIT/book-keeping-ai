@@ -12,11 +12,8 @@ from statsmodels.tools.sm_exceptions import ConvergenceWarning  # Import Converg
 
 warnings.filterwarnings("ignore")  # Ignore all warnings
 warnings.filterwarnings("ignore", category=ConvergenceWarning)  # Ignore ConvergenceWarnings
-
-import tensorflow as tf
 import pandas as pd
 import numpy as np
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.stattools import adfuller
 from tensorflow.keras.models import Sequential
