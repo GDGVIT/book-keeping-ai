@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from forecasting import predict_demand, check_stock_and_alert
 from bokeh_forecast import create_bokeh_plots
 from utils import load_data
@@ -6,7 +6,7 @@ import os
 
 app = Flask(__name__)
 
-# Directory to store uploaded files
+# Directory to store uploaded files and plots
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 data_file_path = None
@@ -45,8 +45,8 @@ def forecast():
     df = load_data(data_file_path)
 
     # Check if item_id exists in the dataset
-    if item_id not in df['item_id'].values:  # Adjust 'item_id' to match your DataFrame column name
-        print(f"Item ID {item_id} not found in the dataset")  # Log for debugging
+    if item_id not in df['item_id'].values:
+        print(f"Item ID {item_id} not found in the dataset")
         return jsonify({"error": f"Item ID {item_id} not found in the dataset."}), 404
 
     # Make predictions
@@ -55,14 +55,15 @@ def forecast():
     if predicted_demand is not None:
         alerts = check_stock_and_alert(df, item_id, predicted_demand, future_months)
 
-        # Optional: create and save Bokeh plots if needed
-        create_bokeh_plots(df, item_id, future_months, predicted_demand)
+        # Create and save Bokeh plots
+        plot_path = create_bokeh_plots(df, item_id, future_months, predicted_demand)
 
         # Convert arrays to lists for JSON serialization
         response = {
             "future_months": future_months.tolist() if hasattr(future_months, 'tolist') else future_months,
             "predicted_demand": predicted_demand.tolist() if hasattr(predicted_demand, 'tolist') else predicted_demand,
-            "alerts": alerts
+            "alerts": alerts,
+            "plot_url": f"/plot/{item_id}"  # URL to view the plot
         }
     else:
         response = {
@@ -72,5 +73,14 @@ def forecast():
     return jsonify(response)
 
 
+@app.route('/plot/<item_id>')
+def plot(item_id):
+    plot_path = f"uploads/demand_forecast_{item_id}.html"
+    if os.path.exists(plot_path):
+        return send_file(plot_path)
+    else:
+        return jsonify({"error": "Plot not found"}), 404
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

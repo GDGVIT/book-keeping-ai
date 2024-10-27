@@ -1,12 +1,10 @@
-version: '3.8'
+version: '3'
 services:
   app:
     build: .
     ports:
-      - "5000:5000"  # Make sure this is set correctly
+      - "5000:5000"
     volumes:
-      - uploads:/app/uploads  # Mount your upload directory
-      - temp:/app/temp  # Mount your temp directory
-volumes:
-  uploads:
-  temp:
+      - .:/app
+    environment:
+      - FLASK_DEBUG=1

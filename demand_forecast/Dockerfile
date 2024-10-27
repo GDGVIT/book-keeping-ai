@@ -1,20 +1,17 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.9
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements.txt file into the container
-COPY requirements.txt .
+# Copy the current directory contents into the container at /app
+COPY . /app
 
-# Install the necessary packages
+# Install any necessary dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code and necessary directories into the container
-COPY . .
-
-# Expose the port your app runs on
+# Expose port 5000 for Flask to run on
 EXPOSE 5000
 
-# Define the command to run your app
+# Run the application
 CMD ["python", "main.py"]

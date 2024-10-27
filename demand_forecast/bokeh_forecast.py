@@ -1,6 +1,7 @@
-from bokeh.plotting import figure, show, output_file
+from bokeh.plotting import figure, output_file, save
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource
+import os
 
 
 def create_bokeh_plots(df, item_id, future_months, predicted_demand):
@@ -31,10 +32,10 @@ def create_bokeh_plots(df, item_id, future_months, predicted_demand):
         x_axis_label='Date',
         y_axis_label='Quantity',
         x_axis_type='datetime',
-        width=800,  # Changed from plot_width to width
-        height=400,  # Use height instead of plot_height
+        width=800,
+        height=400,
         toolbar_location='above',
-        background_fill_color='#f9f9f9'  # Light background for better visibility
+        background_fill_color='#f9f9f9'
     )
 
     actual_plot.line(
@@ -58,8 +59,8 @@ def create_bokeh_plots(df, item_id, future_months, predicted_demand):
         x_axis_label='Date',
         y_axis_label='Quantity',
         x_axis_type='datetime',
-        width=800,  # Changed from plot_width to width
-        height=400,  # Use height instead of plot_height
+        width=800,
+        height=400,
         toolbar_location='above',
         background_fill_color='#f9f9f9'
     )
@@ -79,8 +80,12 @@ def create_bokeh_plots(df, item_id, future_months, predicted_demand):
         color='orange'
     )
 
-    # Output the Bokeh plots to an HTML file
-    output_file("demand_forecasting.html")
+    # Define the HTML file path
+    plot_filename = f"uploads/demand_forecast_{item_id}.html"
+    os.makedirs(os.path.dirname(plot_filename), exist_ok=True)
 
-    # Show both plots in a vertical column layout
-    show(column(actual_plot, predicted_plot))
+    # Output the Bokeh plots to an HTML file
+    output_file(plot_filename)
+    save(column(actual_plot, predicted_plot))  # Save the layout to the file instead of showing it
+
+    return plot_filename  # Return the path to the HTML file
