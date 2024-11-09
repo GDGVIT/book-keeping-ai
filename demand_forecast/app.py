@@ -30,6 +30,11 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/')
+def home():
+    return "Welcome to the Bookkeeping AI API! Use /upload to upload a file and /forecast for forecasting."
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     global data_file_path
@@ -55,6 +60,7 @@ def upload_file():
 
         app.logger.info(f"File uploaded successfully: {data_file_path}")
         return jsonify({"message": "File uploaded successfully", "file_path": str(data_file_path)})
+
     except Exception as e:
         app.logger.error(f"File upload error: {e}")
         return jsonify({"error": "Failed to upload file"}), 500
@@ -105,7 +111,6 @@ def forecast():
     except Exception as e:
         app.logger.error(f"Error during forecasting: {e}")
         return jsonify({"error": "An error occurred during forecasting. Please try again."}), 500
-
 
 
 @app.route('/plot/<item_id>')
