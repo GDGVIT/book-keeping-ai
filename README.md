@@ -15,16 +15,22 @@
 
 
 ## Features
-- [ ]  < feature >
-- [ ]  < feature >
-- [ ]  < feature >
-- [ ]  < feature >
+- [x]  curl -X POST http://127.0.0.1:5000/extract -H "Content-Type: application/json" -d "{\"text\": \"John Doe bought 2 apples for $5\"}"
+
+{"CustomerName":"John Doe","ItemName":"apples","ItemQuantity":"2","Price":"5"}
+
+- [x] curl -X POST "http://127.0.0.1:5000/extract_entities" -H "Content-Type: application/json" -d "{\"text\":\"apples less than 50 rs\"}"
+      
+{"action":"less","object":"apples","range":"50"}
+
 
 <br>
 
 ## Dependencies
- - < dependency >
- - < dependency >
+ - Flask==2.3.3
+ - groq==0.9.0
+ - python-dotenv==1.0.1
+ - Werkzeug==2.3.7
 
 
 ## Running
@@ -32,7 +38,8 @@
 
 < directions to install > 
 ```bash
-< insert code >
+docker-compose up --build 
+docker-compose up 
 ```
 
 < directions to execute >
@@ -46,15 +53,15 @@
 <table>
 	<tr align="center">
 		<td>
-		John Doe
+		Souvik Mahanta
 		<p align="center">
 			<img src = "https://dscvit.com/images/dsc-logo-square.svg" width="150" height="150" alt="Your Name Here (Insert Your Image Link In Src">
 		</p>
 			<p align="center">
-				<a href = "https://github.com/person1">
+				<a href = "https://github.com/souvik03-136">
 					<img src = "http://www.iconninja.com/files/241/825/211/round-collaboration-social-github-code-circle-network-icon.svg" width="36" height = "36" alt="GitHub"/>
 				</a>
-				<a href = "https://www.linkedin.com/in/person1">
+				<a href = "https://www.linkedin.com/in/souvik-mahanta/">
 					<img src = "http://www.iconninja.com/files/863/607/751/network-linkedin-social-connection-circular-circle-media-icon.svg" width="36" height="36" alt="LinkedIn"/>
 				</a>
 			</p>
